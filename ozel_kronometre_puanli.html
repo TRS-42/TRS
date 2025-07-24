@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gelişmiş Kronometre</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #000000, #1e1e1e, #0033ff, #ff0033);
+      background-size: 400% 400%;
+      animation: gradientShift 10s ease infinite;
+      color: white;
+    }
+
+    @keyframes gradientShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+
+    #username {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+
+    #display {
+      font-size: 2.5em;
+      margin: 10px 0;
+    }
+
+    .buttons button, select {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      transition: 0.3s;
+    }
+
+    .buttons button:hover, select:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    #score {
+      margin-top: 20px;
+      font-size: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Kronometre</h1>
+  <div id="username">Kullanıcı: <span id="nameDisplay">Reis</span></div>
+  <div id="display">00:00:00</div>
+  <div class="buttons">
+    <button onclick="start()">Başlat (S)</button>
+    <button onclick="pause()">Duraklat (D)</button>
+    <button onclick="reset()">Sıfırla (R)</button>
+    <button onclick="addPoint()">+1 Puan (P)</button>
+    <button onclick="saveData()">Kaydet (K)</button>
+    <button onclick="resetPoints()">Puan Sıfırla (Z)</button>
+    <select id="soundSelect" onchange="changeSound()">
+      <option value="beep-07.wav">Standart</option>
+      <option value="beep-09.wav">Beep 2</option>
+      <option value="button-16.wav">Tık Sesi</option>
+    </select>
+  </div>
+  <div id="score">Puan: 0</div>
+
+  <audio id="beepSound" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+
+  <script>
+    let startTime;
+    let running = false;
+    let elapsed = 0;
+    let timer;
+    let score = 0;
+    let userName = prompt("Adını yaz Reis:", "Reis");
+    document.getElementById("nameDisplay").textContent = userName;
+
+    const beep = () => document.getElementById('beepSound').play();
+
+    function updateDisplay() {
+      const now = new Date().getTime();
+      const time = running ? now - startTime + elapsed : elapsed;
+      const hours = Math.floor(time / 3600000);
+      const minutes = Math.floor((time % 3600000) / 60000);
+      const seconds = Math.floor((time % 60000) / 1000);
+      document.getElementById('display').textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    function pad(n) {
+      return n.toString().padStart(2, '0');
+    }
+
+    function start() {
+      if (!running) {
+        startTime = new Date().getTime();
+        timer = setInterval(updateDisplay, 500);
+        running = true;
+        beep();
+      }
+    }
+
+    function pause() {
+      if (running) {
+        clearInterval(timer);
+        elapsed += new Date().getTime() - startTime;
+        running = false;
+        beep();
+      }
+    }
+
+    function reset() {
+      clearInterval(timer);
+      running = false;
+      elapsed = 0;
+      updateDisplay();
+      beep();
+    }
+
+    function addPoint() {
+      score++;
+      document.getElementById('score').textContent = `Puan: ${score}`;
+      beep();
+    }
+
+    function resetPoints() {
+      score = 0;
+      document.getElementById('score').textContent = `Puan: ${score}`;
+      beep();
+    }
+
+    function saveData() {
+      const timeStr = document.getElementById('display').textContent;
+      const data = `İsim: ${userName}\nSüre: ${timeStr}\nPuan: ${score}`;
+      const blob = new Blob([data], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `kronometre_kaydi_${userName}.txt`;
+      link.click();
+      beep();
+    }
+
+    function changeSound() {
+      const selected = document.getElementById('soundSelect').value;
+      document.getElementById('beepSound').src = `https://www.soundjay.com/button/${selected}`;
+    }
+
+    // Klavye kısayolları
+    document.addEventListener('keydown', (e) => {
+      switch (e.key.toLowerCase()) {
+        case 's': start(); break;
+        case 'd': pause(); break;
+        case 'r': reset(); break;
+        case 'p': addPoint(); break;
+        case 'k': saveData(); break;
+        case 'z': resetPoints(); break;
+      }
+    });
+
+    updateDisplay();
+  </script>
+</body>
+</html>
